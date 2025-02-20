@@ -1,0 +1,61 @@
+/* global.scss */
+ion-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #ffffff; /* Set global background color */
+}
+
+ion-header {
+  background-color: lightblue; /* If you want a background for the header */
+}
+
+ion-content {
+  flex-grow: 1;
+  display: flex;
+  background-color: #ffffff; /* Set global content background color */
+  overflow: auto; /* Ensure content scrolls if too much */
+  --background: lightblue; /* Add a custom background for content */
+  padding-bottom: 60px; /* Adjust padding to account for footer */
+  justify-content: flex-start; /* Ensures content starts from the top */
+}
+
+
+ion-footer{
+  justify-items: center;
+}
+ion-toolbar {
+  --background: lightblue;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: center; /* Centers items vertically */
+  justify-content: space-between; /* Pushes items to opposite ends */
+  width: 100%;
+}
+
+/* Optional: Style the ion-tabs inside the toolbar */
+ion-tabs {
+  width: 100%;
+  background-color: transparent;
+}
+
+ion-tab-button {
+  flex: 1;
+  padding: 8px 0;
+  text-align: center;
+}
+
+ion-tab-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.no-scrollbars {
+  /* Keeps both the horizontal and vertical
+     scrollbars hidden */
+  overflow: hidden;
+}

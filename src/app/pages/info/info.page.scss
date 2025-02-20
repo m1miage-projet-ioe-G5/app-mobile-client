@@ -1,0 +1,35 @@
+.container{
+  background-color: #2a2a2a;
+  height: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Hide horizontal overflow if necessary */
+}
+
+.scrollable-container {
+  height: 300px; /* Set a fixed height for the container */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Hide horizontal overflow if necessary */
+  padding: 10px; /* Optional: Add padding inside the container */
+  background-color: #f0f0f0; /* Optional: For better visualization */
+  border-radius: 10px; /* Optional: Rounded corners */
+}
+
+
+ion-list{
+  margin-top: 10px;
+  border-radius: 10px;
+  color: purple;
+}
+
+label{
+  margin-top: 10px;
+  margin-bottom: 25px;
+}
+
+.no-scrollbars {
+  /* Keeps both the horizontal and vertical
+     scrollbars hidden */
+  overflow: hidden;
+}

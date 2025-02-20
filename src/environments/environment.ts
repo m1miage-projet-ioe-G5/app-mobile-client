@@ -3,7 +3,9 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  openRouteServiceApiKey: '5b3ce3597851110001cf6248d8eafaece76d4734af92e1170a939c06', apiUrl: undefined
+
 };
 
 /*
