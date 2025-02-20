@@ -1,5 +1,5 @@
 <ion-app>
-  <ion-header>
+  <ion-header  *ngIf="!isConnexionPage()">
     <app-toolbar></app-toolbar>
   </ion-header>
 
@@ -7,7 +7,7 @@
     <ion-router-outlet></ion-router-outlet>
   </ion-content>
 
-  <ion-footer>
+  <ion-footer  *ngIf="!isConnexionPage()">
     <app-navbar></app-navbar>
   </ion-footer>
 
