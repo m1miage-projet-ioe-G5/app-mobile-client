@@ -1,0 +1,34 @@
+
+<div class="container">
+  <ion-label> Signaler un problème ! </ion-label>
+  <div class="signaler">
+    <label> Nature du problème </label>
+    <div class="probleme">
+      <ion-list>
+        <ion-item>
+          <ion-select aria-label="Type probleme" interface="popover" placeholder="nature du problème">
+            <ion-select-option value="travaux">Travaux</ion-select-option>
+            <ion-select-option value="Ascenseur">Ascenseur en panne</ion-select-option>
+            <ion-select-option value="Voirie">voirie impraticable</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+    </div>
+
+    <label> Lieu </label>
+    <div class="probleme">
+      <ion-list>
+        <ion-item>
+          <ion-select aria-label="lieu" interface="popover" placeholder="localisation">
+            <ion-select-option value="maloc">ma localisation</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+    </div>
+
+    <label> Commentaire </label>
+    <div class="commentaire">
+      <textarea placeholder="Ajouter un commentaire"></textarea>
+
+    </div>
+  </div>
