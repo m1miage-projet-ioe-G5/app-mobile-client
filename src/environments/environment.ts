@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  openRouteServiceApiKey: '5b3ce3597851110001cf6248d8eafaece76d4734af92e1170a939c06',
+  openRouteServiceApiKey: '5b3ce3597851110001cf6248d8eafaece76d4734af92e1170a939c06', apiUrl: undefined
+
 };
 
 /*
