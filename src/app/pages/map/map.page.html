@@ -1,5 +1,11 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Carte</ion-title>
+  </ion-toolbar>
+</ion-header>
 
 <ion-content>
+  <app-map-component></app-map-component> <!-- ✅ Use new selector -->
 
   <div class="container">
     <div class="InputContainer">
@@ -10,7 +16,6 @@
         name="text"
         type="text"
       />
-
       <label class="labelforsearch" for="input">
         <svg class="searchIcon" viewBox="0 0 512 512">
           <path
@@ -21,5 +26,3 @@
     </div>
   </div>
 </ion-content>
-
-
