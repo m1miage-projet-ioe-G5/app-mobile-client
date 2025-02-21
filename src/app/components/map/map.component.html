@@ -20,16 +20,23 @@
     </label>
   </div>
 
+  <ion-item>
+    <ion-input [(ngModel)]="startLocation" placeholder="Adresse de départ"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-input [(ngModel)]="endLocation" placeholder="Adresse d'arrivée"></ion-input>
+  </ion-item>
+
+  <ion-button (click)="calculateRoute(startLocation, endLocation)">
+    Calculer l'itinéraire
+  </ion-button>
+
+
   <div *ngIf="isLoading" class="loading-indicator">
     <ion-spinner name="crescent"></ion-spinner>
     <p>Calculating route...</p>
   </div>
 
-
-  <div class="route-container">
-    <input type="text" [(ngModel)]="startLocation" placeholder="Départ" />
-    <input type="text" [(ngModel)]="endLocation" placeholder="Arrivée" />
-    <button (click)="calculateRoute(startLocation, endLocation)">🚗 Calculer</button>
-  </div>
   <div id="map"></div>
 </ion-content>
