@@ -4,13 +4,14 @@ import * as L from 'leaflet';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from 'src/environments/environment';
+import {CommonModule} from "@angular/common";
 
 @Component({
   selector: 'app-map-component',
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule],
+  imports: [IonicModule, FormsModule, CommonModule],
 })
 export class MapComponent implements AfterViewInit, OnDestroy {
   private map!: L.Map;
@@ -19,15 +20,22 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   public endLocation: string = ''; // Stores end address for route calculation
   public isLoading: boolean = false; // Tracks loading state for route calculation
 
+
+  private apiKey = environment.openRouteServiceApiKey; // ✅ Corrected
+
   constructor(private platform: Platform, private http: HttpClient) {}
 
   ngAfterViewInit(): void {
+    console.log('API Key:', this.apiKey);
     this.platform.ready().then(() => {
       setTimeout(() => {
         this.initMap();
       }, 500); // Delay to ensure the DOM is fully loaded
     });
   }
+
+
+
 
   ngOnDestroy(): void {
     if (this.map) {

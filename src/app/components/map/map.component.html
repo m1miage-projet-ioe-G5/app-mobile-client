@@ -20,6 +20,12 @@
     </label>
   </div>
 
+  <div *ngIf="isLoading" class="loading-indicator">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Calculating route...</p>
+  </div>
+
+
   <div class="route-container">
     <input type="text" [(ngModel)]="startLocation" placeholder="Départ" />
     <input type="text" [(ngModel)]="endLocation" placeholder="Arrivée" />

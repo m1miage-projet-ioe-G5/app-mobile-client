@@ -1,12 +1,14 @@
 // This file can be replaced during build by using the `fileReplacements` array.
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
-
 export const environment = {
   production: false,
-  openRouteServiceApiKey: '5b3ce3597851110001cf6248d8eafaece76d4734af92e1170a939c06', apiUrl: undefined
-
+  openRouteServiceApiKey: '5b3ce3597851110001cf6248d8eafaece76d4734af92e1170a939c06',
+  apiUrl: 'http://localhost:8081'
 };
+
+// If you need to use the API key in another file:
+export const apiKey = environment.openRouteServiceApiKey;
 
 /*
  * For easier debugging in development mode, you can import the following file
