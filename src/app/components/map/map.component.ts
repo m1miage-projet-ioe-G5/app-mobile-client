@@ -22,6 +22,8 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   public endLocation: string = ''; // Stores end address for route calculation
   public isLoading: boolean = false; // Tracks loading state for route calculation
   private apiKey = environment.openRouteServiceApiKey; // OpenRouteService API Key
+  private routeLine?: L.Polyline;  // Store the previous route line
+
 
   constructor(private platform: Platform, private http: HttpClient) {}
 
@@ -112,11 +114,15 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
     console.log("✅ Route drawn on the map!");
   }
-
   calculateRoute(startAddress: string, endAddress: string): void {
     if (!startAddress || !endAddress) return;
 
     this.isLoading = true; // Show loading indicator
+
+    // Clear previous route if it exists
+    if (this.routeLine) {
+      this.routeLine.remove();  // Remove the previous route from the map
+    }
 
     Promise.all([this.getCoordinates(startAddress), this.getCoordinates(endAddress)])
       .then(([startCoords, endCoords]) => {
@@ -144,7 +150,12 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
             // Extract route coordinates and draw the route on the map
             const routeCoordinates = data.features[0].geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
-            this.drawRoute(routeCoordinates);
+
+            // Draw the new route and store the reference
+            this.routeLine = L.polyline(routeCoordinates, { color: 'blue', weight: 4 }).addTo(this.map);
+
+            // Zoom the map to fit the bounds of the new route
+            this.map.fitBounds(this.routeLine.getBounds());
             this.isLoading = false;
           },
           error: (err) => {
@@ -160,7 +171,6 @@ export class MapComponent implements AfterViewInit, OnDestroy {
         this.isLoading = false;
       });
   }
-
 
 
 }
