@@ -85,7 +85,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
           // Use getMarker function to create a custom marker
           const marker = getMarker(latLng);
-          marker.addTo(this.map).bindPopup(`📍 ${this.searchQuery}`).openPopup();
+          marker.addTo(this.map).bindPopup(` ${this.searchQuery}`).openPopup();
 
           // Use recenter function to move the map
           recenter(this.map, latLng);
