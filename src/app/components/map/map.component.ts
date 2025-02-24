@@ -23,6 +23,9 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   public isLoading: boolean = false; // Tracks loading state for route calculation
   private apiKey = environment.openRouteServiceApiKey; // OpenRouteService API Key
   private routeLine?: L.Polyline;  // Store the previous route line
+  private startMarker: L.Marker | null = null;
+  private endMarker: L.Marker | null = null;
+
 
 
   constructor(private platform: Platform, private http: HttpClient) {}
@@ -159,7 +162,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
             this.isLoading = false;
           },
           error: (err) => {
-            console.error("❌ Error fetching walking route:", err);
+            console.error(" Error fetching walking route:", err);
             alert('Error fetching walking route. Please try again.');
             this.isLoading = false;
           },
@@ -170,6 +173,56 @@ export class MapComponent implements AfterViewInit, OnDestroy {
         alert('Error with geocoding. Please check your addresses.');
         this.isLoading = false;
       });
+  }
+
+  drawWalkingRoute(routeData: any) {
+    if (!routeData || !routeData.features || routeData.features.length === 0) {
+      alert("No walking route found.");
+      return;
+    }
+
+    const coordinates = routeData.features[0].geometry.coordinates;
+
+    // Convert coordinates from [lng, lat] to [lat, lng] for Leaflet
+    const latLngs = coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
+
+
+    // Clear previous route and markers
+    if (this.routeLine) {
+      this.map.removeLayer(this.routeLine);
+    }
+    if (this.startMarker) {
+      this.map.removeLayer(this.startMarker);
+    }
+    if (this.endMarker) {
+      this.map.removeLayer(this.endMarker);
+    }
+
+    // Draw polyline for the route
+    this.routeLine = L.polyline(latLngs, { color: 'blue', weight: 4 }).addTo(this.map);
+
+    // Get start and end coordinates
+    const startCoords = latLngs[0];
+    const endCoords = latLngs[latLngs.length - 1];
+
+    // Add start marker
+    this.startMarker = L.marker(startCoords, {
+      icon: L.icon({
+        iconUrl: 'assets/start-marker.png', // Replace with your start marker icon
+        iconSize: [32, 32]
+      })
+    }).bindPopup("Start Location").addTo(this.map);
+
+    // Add end marker
+    this.endMarker = L.marker(endCoords, {
+      icon: L.icon({
+        iconUrl: 'assets/end-marker.png', // Replace with your end marker icon
+        iconSize: [32, 32]
+      })
+    }).bindPopup("End Location").addTo(this.map);
+
+    // Adjust map to fit the route
+    this.map.fitBounds(this.routeLine.getBounds());
   }
 
 

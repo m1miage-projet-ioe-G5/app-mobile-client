@@ -1,34 +1,32 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Signaler un problème</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-<div class="container">
-  <ion-label> Signaler un problème ! </ion-label>
-  <div class="signaler">
-    <label> Nature du problème </label>
-    <div class="probleme">
-      <ion-list>
-        <ion-item>
-          <ion-select aria-label="Type probleme" interface="popover" placeholder="nature du problème">
-            <ion-select-option value="travaux">Travaux</ion-select-option>
-            <ion-select-option value="Ascenseur">Ascenseur en panne</ion-select-option>
-            <ion-select-option value="Voirie">voirie impraticable</ion-select-option>
-          </ion-select>
-        </ion-item>
-      </ion-list>
-    </div>
+<ion-content class="ion-padding">
+  <form [formGroup]="signalementForm">
+    <ion-item>
+      <ion-label>Nature du problème</ion-label>
+      <ion-select formControlName="typeProbleme" placeholder="Sélectionner">
+        <ion-select-option value="travaux">Travaux</ion-select-option>
+        <ion-select-option value="Ascenseur">Ascenseur en panne</ion-select-option>
+        <ion-select-option value="Voirie">Voirie impraticable</ion-select-option>
+      </ion-select>
+    </ion-item>
 
-    <label> Lieu </label>
-    <div class="probleme">
-      <ion-list>
-        <ion-item>
-          <ion-select aria-label="lieu" interface="popover" placeholder="localisation">
-            <ion-select-option value="maloc">ma localisation</ion-select-option>
-          </ion-select>
-        </ion-item>
-      </ion-list>
-    </div>
+    <ion-item>
+      <ion-label>Lieu</ion-label>
+      <ion-select formControlName="lieu" placeholder="Localisation">
+        <ion-select-option value="maloc">Ma localisation</ion-select-option>
+      </ion-select>
+    </ion-item>
 
-    <label> Commentaire </label>
-    <div class="commentaire">
-      <textarea placeholder="Ajouter un commentaire"></textarea>
+    <ion-item>
+      <ion-label>Commentaire</ion-label>
+      <ion-textarea formControlName="description" placeholder="Ajouter un commentaire"></ion-textarea>
+    </ion-item>
 
-    </div>
-  </div>
+    <ion-button expand="full" (click)="envoyerSignalement()">Envoyer</ion-button>
+  </form>
+</ion-content>
