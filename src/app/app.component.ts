@@ -11,6 +11,6 @@ export class AppComponent {
   constructor(private router: Router) {}
 
   isConnexionPage(): boolean {
-    return this.router.url === '/connexion'; // ✅ Hide toolbar on connexion page
+    return this.router.url === '/login' || this.router.url == '/register'; // ✅ Hide toolbar on connexion page
   }
 }

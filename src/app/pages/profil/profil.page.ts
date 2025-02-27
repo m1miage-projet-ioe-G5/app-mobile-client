@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {CommonModule} from "@angular/common";
 import {IonicModule} from "@ionic/angular";
+import {AuthService} from "../../services/auth.service";
 
 @Component({
   selector: 'app-profil',
@@ -11,10 +12,12 @@ import {IonicModule} from "@ionic/angular";
   imports: [IonicModule, CommonModule, FormsModule],
 })
 export class ProfilPage implements OnInit {
+  protected user: any;
 
-  constructor() { }
+  constructor(private authService: AuthService) { }
 
   ngOnInit() {
+    this.user = this.authService.getCurrentUser();
   }
 
 }
