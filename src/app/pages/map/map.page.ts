@@ -7,6 +7,7 @@ import { environment } from 'src/environments/environment';
 import { CommonModule } from '@angular/common';
 import { getMarker } from 'src/app/pages/map/utils/marker';
 import { recenter } from 'src/app/pages/map/utils/leaflet.utils';
+import {debounceTime, distinctUntilChanged, Subject, switchMap} from "rxjs";
 
 @Component({
   selector: 'app-map',
@@ -32,6 +33,71 @@ export class MapPage implements AfterViewInit, OnDestroy {
   public endSuggestions: any[] = [];
   public showStartSuggestions: boolean = false;
   public showEndSuggestions: boolean = false;
+  public routeSummary: { distance: string; duration: string; steps: string[] } | null = null;
+  panelOpen = false;
+
+  private searchSubject = new Subject<string>();
+  public routeDetails: {
+    distance: number;
+    duration: number;
+    steps: { type: string, instruction: string, completed?: boolean }[];
+  } | null = null;
+
+  constructor(
+    private platform: Platform,
+    private http: HttpClient,
+    private loadingCtrl: LoadingController
+  ) {}
+
+  ngAfterViewInit(): void {
+    this.platform.ready().then(() => {
+      setTimeout(() => this.initMap(), 500);
+    });
+    setTimeout(() => {
+      this.loadSignalements();
+    }, 2000);
+    this.loadRecentSearches();
+
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => this.getLocationSuggestions(query))
+    ).subscribe(results => this.searchResults = results);
+
+  }
+  private getLocationSuggestions(query: string) {
+    if (!query.trim()) return [];
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+    return this.http.get<any[]>(url);
+  }
+  searchLocationSuggestions() {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  selectSuggestion(suggestion: { display_name: string, lat: string, lon: string }) {
+    this.searchQuery = suggestion.display_name;
+    this.searchResults = [];
+
+    const latLng = L.latLng(parseFloat(suggestion.lat), parseFloat(suggestion.lon));
+    const marker = getMarker(latLng);
+    marker.addTo(this.map).bindPopup(suggestion.display_name).openPopup();
+
+    recenter(this.map, latLng);
+    this.saveRecentSearch(suggestion.display_name);
+  }
+
+  private saveRecentSearch(location: string) {
+    let recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    if (!recentSearches.includes(location)) {
+      recentSearches.unshift(location);
+      if (recentSearches.length > 5) recentSearches.pop();
+      localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+    }
+  }
+
+  loadRecentSearches() {
+    return JSON.parse(localStorage.getItem('recentSearches') || '[]');
+  }
 
 
   searchStartSuggestions() {
@@ -103,52 +169,36 @@ export class MapPage implements AfterViewInit, OnDestroy {
     }, 200); // Delay to allow click event before hiding
   }
 
+  handleKeyDown(event: KeyboardEvent, index: number) {
+    if (!this.searchResults.length) return; // Sécurité si pas de résultats
 
-  searchLocationSuggestions(): void {
-    if (!this.searchQuery.trim()) {
-      this.searchResults = []; // Clear suggestions when input is empty
+    let nextIndex = index;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      nextIndex = (index + 1) % this.searchResults.length;
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      nextIndex = (index - 1 + this.searchResults.length) % this.searchResults.length;
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      this.selectSuggestion(this.searchResults[index]);
       return;
     }
 
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.searchQuery)}&limit=5`;
-
-    this.http.get<any[]>(url).subscribe({
-      next: (results) => {
-        this.searchResults = results.map(result => ({
-          display_name: result.display_name,
-          lat: result.lat,
-          lon: result.lon
-        }));
-      },
-      error: () => this.searchResults = [],
-    });
-  }
-
-  selectSuggestion(suggestion: { display_name: string, lat: string, lon: string }) {
-    this.searchQuery = suggestion.display_name; // Set the selected place
-    this.searchResults = []; // Hide suggestions after selection
-
-    const latLng = L.latLng(parseFloat(suggestion.lat), parseFloat(suggestion.lon));
-    const marker = getMarker(latLng);
-    marker.addTo(this.map).bindPopup(suggestion.display_name).openPopup();
-
-    recenter(this.map, latLng);
+    // Récupérer l'élément et lui donner le focus
+    const elements = document.querySelectorAll('.suggestions li');
+    if (elements[nextIndex]) {
+      (elements[nextIndex] as HTMLElement).focus();
+    }
   }
 
 
-  constructor(
-    private platform: Platform,
-    private http: HttpClient,
-    private loadingCtrl: LoadingController
-  ) {}
 
-  ngAfterViewInit(): void {
-    this.platform.ready().then(() => {
-      setTimeout(() => this.initMap(), 500);
-    });
-    this.loadSignalements();
 
-  }
+
+
+
+
 
   ngOnDestroy(): void {
     if (this.map) {
@@ -259,7 +309,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
   }
 
   private loadSignalements(): void {
-    const url = 'http://localhost:8081/api/v1/reports'; // 🔹 Remplace par l'URL de ton API
+    const url = 'http://localhost:8081/api/v1/reports/'; // 🔹 Remplace par l'URL de ton API
     this.http.get<any[]>(url).subscribe({
       next: (signalements) => {
         signalements.forEach(signalement => {
@@ -271,23 +321,35 @@ export class MapPage implements AfterViewInit, OnDestroy {
     });
   }
   private addSignalementMarker(lat: number, lon: number, typeProbleme: string, description: string): void {
+    if (!this.map) {
+      console.error("Map is not initialized yet!");
+      return;
+    }
+
+    // Ensure lat/lon are valid (avoid placing markers at [0,0] if invalid)
+    if (lat === 0 && lon === 0) {
+      console.warn("Skipping marker with invalid coordinates:", lat, lon);
+      return;
+    }
+
     const iconUrl = this.getIconUrlForProbleme(typeProbleme);
     const marker = L.marker([lat, lon], {
       icon: L.icon({
         iconUrl,
-        iconSize: [30, 30], // 🔹 Ajuste la taille si besoin
+        iconSize: [30, 30], // Adjust size if needed
       })
     }).bindPopup(`<b>${typeProbleme}</b><br>${description}`);
 
     marker.addTo(this.map);
   }
 
+
   private getIconUrlForProbleme(typeProbleme: string): string {
     switch (typeProbleme) {
       //case 'ENTRAVAUX': return 'assets/icons/travaux.png';
       //case 'RAMPE': return 'assets/icons/rampe.png';
       //case 'ACCENSSEURENPANNE': return 'assets/icons/ascenseur.png';
-      default: return 'assets/icons/Signalement_danger.png';
+      default: return '../../assets/icon/Signalement_danger.png';
     }
   }
 
@@ -311,11 +373,37 @@ export class MapPage implements AfterViewInit, OnDestroy {
       icon: L.icon({ iconUrl: 'assets/icon/end-marker.png', iconSize: [32, 32] }),
     }).bindPopup("End Location").addTo(this.map);
 
+    // Calculer la distance et la durée
+    const distance = routeData.features[0].properties.segments[0].distance / 1000; // Convertir en kilomètres
+    const duration = routeData.features[0].properties.segments[0].duration / 60; // Convertir en minutes
+    const steps = routeData.features[0].properties.segments[0].steps.map((step: any) => ({
+      type: step.type, // 'turn_left', 'turn_right', 'straight', etc.
+      instruction: step.instruction,
+    }));
+
+    // Affectation à routeDetails
+    this.routeDetails = {
+      distance: distance,
+      duration: duration,
+      steps: steps,
+    };
+
+    // Ajuster la vue pour afficher l'itinéraire
     this.map.fitBounds(this.routeLine.getBounds());
 
-    // Optional: Speak the first instruction
+    // Optionnel : Lecture vocale pour la première instruction
     this.speak("Itinéraire trouvé.");
   }
+  convertDuration(duration: number): string {
+    if (duration < 60) {
+      return `${Math.round(duration)} min`;
+    } else {
+      const hours = Math.floor(duration / 60);
+      const minutes = Math.round(duration % 60);
+      return `${hours} h ${minutes} min`;
+    }
+  }
+
 
   private trackUserLocation(): void {
     navigator.geolocation.watchPosition(
@@ -335,5 +423,9 @@ export class MapPage implements AfterViewInit, OnDestroy {
   private speak(text: string): void {
     const utterance = new SpeechSynthesisUtterance(text);
     speechSynthesis.speak(utterance);
+  }
+
+  togglePanel() {
+    this.panelOpen = !this.panelOpen;
   }
 }

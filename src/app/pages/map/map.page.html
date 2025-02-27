@@ -10,17 +10,21 @@
       placeholder="Rechercher un lieu..."
       (focus)="showSuggestions = true"
       (blur)="hideSuggestions()"
+      autocomplete="off"
+      aria-label="Rechercher un lieu"
     />
 
-    <!-- 🔥 Improved Search Suggestions Dropdown -->
+    <!-- 🔥 Suggestions améliorées -->
     <ul *ngIf="showSuggestions && searchResults.length > 0" class="suggestions">
-      <li *ngFor="let result of searchResults" (click)="selectSuggestion(result)">
+      <li *ngFor="let result of searchResults; let i = index"
+          (click)="selectSuggestion(result)"
+          (keydown)="handleKeyDown($event, i)">
         <ion-icon name="location-outline"></ion-icon> {{ result.display_name }}
       </li>
     </ul>
 
     <label class="labelforsearch" for="input">
-      <button (click)="searchLocation()">
+      <button (click)="searchLocation()" aria-label="Lancer la recherche">
         <svg class="searchIcon" viewBox="0 0 512 512">
           <path
             d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
@@ -30,11 +34,17 @@
     </label>
   </div>
 
-  <!-- 🔥 Improved Route Inputs -->
+  <!-- 🔥 Route Inputs améliorés -->
   <div class="route-inputs">
     <ion-item>
       <ion-icon name="navigate-outline"></ion-icon>
-      <ion-input [(ngModel)]="startLocation" (keyup)="searchStartSuggestions()" (blur)="hideStartSuggestions()" placeholder="Adresse de départ"></ion-input>
+      <ion-input
+        [(ngModel)]="startLocation"
+        (keyup)="searchStartSuggestions()"
+        (blur)="hideStartSuggestions()"
+        placeholder="Adresse de départ"
+        autocomplete="off">
+      </ion-input>
     </ion-item>
 
     <ul *ngIf="showStartSuggestions && startSuggestions.length > 0" class="suggestions">
@@ -45,7 +55,13 @@
 
     <ion-item>
       <ion-icon name="flag-outline"></ion-icon>
-      <ion-input [(ngModel)]="endLocation" (keyup)="searchEndSuggestions()" (blur)="hideEndSuggestions()" placeholder="Adresse d'arrivée"></ion-input>
+      <ion-input
+        [(ngModel)]="endLocation"
+        (keyup)="searchEndSuggestions()"
+        (blur)="hideEndSuggestions()"
+        placeholder="Adresse d'arrivée"
+        autocomplete="off">
+      </ion-input>
     </ion-item>
 
     <ul *ngIf="showEndSuggestions && endSuggestions.length > 0" class="suggestions">
@@ -59,11 +75,36 @@
     </ion-button>
   </div>
 
-
-  <!-- 🔥 Show Loading Indicator When Searching -->
+  <!-- 🔥 Indicateur de chargement amélioré -->
   <div *ngIf="isLoading" class="loading-indicator">
     <ion-spinner name="crescent"></ion-spinner>
-    <p>Calculating route...</p>
+    <p>Calcul de l'itinéraire...</p>
+  </div>
+
+
+
+  <!-- 🔥 Carte -->
+  <div *ngIf="routeDetails" class="route-summary">
+    <h3>Résumé du trajet 🚶</h3>
+
+    <!-- Dynamique de la distance -->
+    <p><strong>Distance :</strong> {{ routeDetails.distance | number:'1.0-2' }} km</p>
+
+    <!-- Dynamique de la durée avec conversion (en minutes ou heures) -->
+    <p><strong>Durée estimée :</strong> {{ convertDuration(routeDetails.duration) }}</p>
+
+    <!-- Étapes du trajet -->
+    <ul>
+      <li *ngFor="let step of routeDetails.steps; let i = index" [ngClass]="{ 'completed-step': step.completed }">
+        <!-- Ajoutez une icône selon l'action -->
+        <ion-icon *ngIf="step.type === 'turn_left'" name="arrow-back-outline"></ion-icon>
+        <ion-icon *ngIf="step.type === 'turn_right'" name="arrow-forward-outline"></ion-icon>
+        <ion-icon *ngIf="step.type === 'straight'" name="arrow-forward-outline"></ion-icon>
+
+        <!-- Détails de l'étape -->
+        {{ step.instruction }}
+      </li>
+    </ul>
   </div>
 
   <!-- 🔥 Map Container -->

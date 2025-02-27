@@ -7,7 +7,7 @@ import {environment} from "../../environments/environment";
   providedIn: 'root',
 })
 export class SignalementService {
-  private apiUrl = environment.apiUrl + '/api/v1/reports';
+  private apiUrl = 'http://localhost:8081/api/v1/reports/';
 
   constructor(private http: HttpClient) {}
 
