@@ -59,7 +59,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
     this.loadRecentSearches();
 
     this.searchSubject.pipe(
-      debounceTime(300),
+      debounceTime(300000),
       distinctUntilChanged(),
       switchMap(query => this.getLocationSuggestions(query))
     ).subscribe(results => this.searchResults = results);
@@ -291,22 +291,115 @@ export class MapPage implements AfterViewInit, OnDestroy {
           return;
         }
 
-        const walkingUrl = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${this.apiKey}&start=${startCoords[1]},${startCoords[0]}&end=${endCoords[1]},${endCoords[0]}`;
+        const url = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${this.apiKey}&start=${startCoords[1]},${startCoords[0]}&end=${endCoords[1]},${endCoords[0]}`;
 
-        this.http.get<any>(walkingUrl).subscribe({
+        this.http.get<any>(url).subscribe({
           next: (data) => {
             if (!data.features?.length) {
               alert('No walking route found.');
               return;
             }
 
-            this.drawWalkingRoute(data);
+            // Check if the route crosses any obstacles
+            this.http.get<any[]>('http://localhost:8081/api/v1/reports/').subscribe(signalements => {
+              if (this.routeIntersectsObstacles(data.features[0].geometry.coordinates, signalements)) {
+                alert("Route blocked by obstacles! Trying alternative route...");
+                this.findAlternativeRoute(startCoords, endCoords, signalements);
+              } else {
+                this.drawWalkingRoute(data);
+              }
+            });
           },
           error: () => alert('Error fetching route.'),
         });
       })
       .catch(() => alert('Error getting coordinates.'));
   }
+  private routeIntersectsObstacles(routeCoords: [number, number][], signalements: any[]): boolean {
+    const bufferDistance = 0.0005; // Approx ~50m buffer zone
+
+    return signalements.some(signalement => {
+      const signalLat = parseFloat(signalement.latitude);
+      const signalLon = parseFloat(signalement.longitude);
+
+      return routeCoords.some(([lon, lat]) =>
+        Math.abs(lat - signalLat) < bufferDistance && Math.abs(lon - signalLon) < bufferDistance
+      );
+    });
+  }
+  private findAlternativeRoute(startCoords: [number, number], endCoords: [number, number], signalements: any[]): void {
+    const midPoint = this.getSafeMidpoint(startCoords, endCoords, signalements);
+
+    if (!midPoint) {
+      alert("No alternative route found!");
+      return;
+    }
+
+    // Get first leg of the journey (start → midPoint)
+    const url1 = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${this.apiKey}&start=${startCoords[1]},${startCoords[0]}&end=${midPoint[1]},${midPoint[0]}`;
+
+    // Get second leg of the journey (midPoint → end)
+    const url2 = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${this.apiKey}&start=${midPoint[1]},${midPoint[0]}&end=${endCoords[1]},${endCoords[0]}`;
+
+    Promise.all([
+      this.http.get<any>(url1).toPromise(),
+      this.http.get<any>(url2).toPromise(),
+    ])
+      .then(([route1, route2]) => {
+        if (!route1.features?.length || !route2.features?.length) {
+          alert('No valid alternative route found.');
+          return;
+        }
+
+        // Merge both routes into one
+        const combinedRoute = {
+          features: [
+            { geometry: { coordinates: [...route1.features[0].geometry.coordinates, ...route2.features[0].geometry.coordinates] } }
+          ]
+        };
+
+        this.drawWalkingRoute(combinedRoute);
+      })
+      .catch(() => alert('Error fetching alternative route.'));
+  }
+
+
+  private getSafeMidpoint(startCoords: [number, number], endCoords: [number, number], signalements: any[]): [number, number] | null {
+    let midLat = (startCoords[0] + endCoords[0]) / 2;
+    let midLon = (startCoords[1] + endCoords[1]) / 2;
+
+    const bufferDistance = 0.001; // Increase buffer (~100m instead of 50m)
+
+    // Find a safe detour point
+    for (let i = 0; i < 5; i++) {  // Try 5 alternative points
+      const shift = (i + 1) * 0.0005; // Increase shift distance each time
+
+      // Try shifting the detour point in different directions
+      const possiblePoints: [number, number][] = [
+        [midLat + shift, midLon], // North
+        [midLat - shift, midLon], // South
+        [midLat, midLon + shift], // East
+        [midLat, midLon - shift], // West
+      ];
+
+      for (const [newLat, newLon] of possiblePoints) {
+        const isSafe = !signalements.some(signalement => {
+          const signalLat = parseFloat(signalement.latitude);
+          const signalLon = parseFloat(signalement.longitude);
+          return Math.abs(newLat - signalLat) < bufferDistance && Math.abs(newLon - signalLon) < bufferDistance;
+        });
+
+        if (isSafe) return [newLat, newLon]; // Return first safe detour
+      }
+    }
+
+    return null; // No safe detour found
+  }
+
+
+
+
+
 
   private loadSignalements(): void {
     const url = 'http://localhost:8081/api/v1/reports/'; // 🔹 Remplace par l'URL de ton API
@@ -336,7 +429,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
     const marker = L.marker([lat, lon], {
       icon: L.icon({
         iconUrl,
-        iconSize: [30, 30], // Adjust size if needed
+        iconSize: [40, 40], // Adjust size if needed
       })
     }).bindPopup(`<b>${typeProbleme}</b><br>${description}`);
 
@@ -346,9 +439,9 @@ export class MapPage implements AfterViewInit, OnDestroy {
 
   private getIconUrlForProbleme(typeProbleme: string): string {
     switch (typeProbleme) {
-      //case 'ENTRAVAUX': return 'assets/icons/travaux.png';
+      case 'ENTRAVAUX': return '../../assets/icon/ascennseurpanne.png';
       //case 'RAMPE': return 'assets/icons/rampe.png';
-      //case 'ACCENSSEURENPANNE': return 'assets/icons/ascenseur.png';
+      case 'ACCENSSEURENPANNE': return '../../assets/icons/ascenseurpanne.png';
       default: return '../../assets/icon/Signalement_danger.png';
     }
   }

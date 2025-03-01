@@ -9,23 +9,29 @@
     <ion-item>
       <ion-label>Nature du problème</ion-label>
       <ion-select formControlName="typeProbleme" placeholder="Sélectionner">
-        <ion-select-option value="travaux">Travaux</ion-select-option>
-        <ion-select-option value="Ascenseur">Ascenseur en panne</ion-select-option>
-        <ion-select-option value="Voirie">Voirie impraticable</ion-select-option>
+        <ion-select-option value="ENTRAVAUX">Travaux</ion-select-option>
+        <ion-select-option value="ACCENSSEURENPANNE">Ascenseur en panne</ion-select-option>
+        <ion-select-option value="RAMPE">Accès rampe</ion-select-option>
       </ion-select>
     </ion-item>
 
-    <ion-item>
+    <!-- <ion-item>
       <ion-label>Lieu</ion-label>
       <ion-select formControlName="lieu" placeholder="Localisation">
-        <ion-select-option value="maloc">Ma localisation</ion-select-option>
+        <ion-select-option>Ma localisation</ion-select-option>
       </ion-select>
-    </ion-item>
+    </ion-item>  -->
 
     <ion-item>
       <ion-label>Commentaire</ion-label>
       <ion-textarea formControlName="description" placeholder="Ajouter un commentaire"></ion-textarea>
     </ion-item>
+
+    <!-- Optionally add fields for photo upload -->
+    <!-- <ion-item>
+      <ion-label>Photo</ion-label>
+      <ion-input formControlName="photoUrl" placeholder="URL de la photo"></ion-input>
+    </ion-item> -->
 
     <ion-button expand="full" (click)="envoyerSignalement()">Envoyer</ion-button>
   </form>

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {IonicModule} from "@ionic/angular";
 import {CommonModule} from "@angular/common";
 import {FormsModule} from "@angular/forms";
+import {SignalementService} from "../../services/signalement.service";
 
 @Component({
   selector: 'app-info',
@@ -12,18 +13,26 @@ import {FormsModule} from "@angular/forms";
 
 })
 export class InfoPage implements OnInit {
-  items = [];
+  items: any[] = [];
+  loading = true; // Track loading state
+
+  constructor(private signalementService: SignalementService) {}
 
   ngOnInit() {
-    this.generateItems();
+    this.getSignalements();
   }
 
-  private generateItems() {
-    const count = this.items.length + 1;
-    for (let i = 0; i < 25; i++) {
-      // @ts-ignore
-      this.items.push(`Problème ${count + i}`);
-    }
+  private getSignalements() {
+    this.signalementService.getAllSignalements().subscribe({
+      next: (data) => {
+        this.items = data;
+        this.loading = false; // Set loading to false once data is fetched
+      },
+      error: (err) => {
+        console.error('Error fetching signalements:', err);
+        this.loading = false; // Set loading to false even in case of error
+      },
+    });
   }
 
 }
