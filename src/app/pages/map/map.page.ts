@@ -439,9 +439,9 @@ export class MapPage implements AfterViewInit, OnDestroy {
 
   private getIconUrlForProbleme(typeProbleme: string): string {
     switch (typeProbleme) {
-      case 'ENTRAVAUX': return '../../assets/icon/ascennseurpanne.png';
+      case 'ENTRAVAUX': return '../../assets/icon/travaux.png';
       //case 'RAMPE': return 'assets/icons/rampe.png';
-      case 'ACCENSSEURENPANNE': return '../../assets/icons/ascenseurpanne.png';
+      case 'ACCENSSEURENPANNE': return '../../assets/icon/ascenseurpanne.png';
       default: return '../../assets/icon/Signalement_danger.png';
     }
   }
