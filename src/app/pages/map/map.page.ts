@@ -7,7 +7,10 @@ import { environment } from 'src/environments/environment';
 import { CommonModule } from '@angular/common';
 import { getMarker } from 'src/app/pages/map/utils/marker';
 import { recenter } from 'src/app/pages/map/utils/leaflet.utils';
-import {debounceTime, distinctUntilChanged, Subject, switchMap} from "rxjs";
+import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, tap} from "rxjs";
+import { AlertController } from '@ionic/angular';
+import {LocationService} from "../../services/location.service";
+
 
 @Component({
   selector: 'app-map',
@@ -33,10 +36,12 @@ export class MapPage implements AfterViewInit, OnDestroy {
   public endSuggestions: any[] = [];
   public showStartSuggestions: boolean = false;
   public showEndSuggestions: boolean = false;
+  public isLoadingSuggestions: boolean = false;
+
   public routeSummary: { distance: string; duration: string; steps: string[] } | null = null;
   panelOpen = false;
 
-  private searchSubject = new Subject<string>();
+  public searchSubject = new Subject<string>();
   public routeDetails: {
     distance: number;
     duration: number;
@@ -46,12 +51,19 @@ export class MapPage implements AfterViewInit, OnDestroy {
   constructor(
     private platform: Platform,
     private http: HttpClient,
-    private loadingCtrl: LoadingController
+    private loadingCtrl: LoadingController,
+    private locationService: LocationService,
+    private alertController: AlertController
   ) {}
 
   ngAfterViewInit(): void {
     this.platform.ready().then(() => {
-      setTimeout(() => this.initMap(), 500);
+      this.locationService.startTracking();
+      setTimeout(() => {
+        this.initMap();
+
+
+      }, 500);
     });
     setTimeout(() => {
       this.loadSignalements();
@@ -59,10 +71,15 @@ export class MapPage implements AfterViewInit, OnDestroy {
     this.loadRecentSearches();
 
     this.searchSubject.pipe(
-      debounceTime(300000),
-      distinctUntilChanged(),
-      switchMap(query => this.getLocationSuggestions(query))
-    ).subscribe(results => this.searchResults = results);
+      debounceTime(300), // 300 ms d'attente avant de lancer la requête
+      distinctUntilChanged(), // Ne pas relancer si la valeur n'a pas changé
+      tap(() => this.isLoadingSuggestions = true), // Afficher un spinner pendant la recherche
+      switchMap(query => this.getLocationSuggestions(query)), // Appel à l'API
+      finalize(() => this.isLoadingSuggestions = false) // Masquer le spinner après la requête
+    ).subscribe(results => {
+      this.searchResults = results;
+    });
+
 
   }
   private getLocationSuggestions(query: string) {
@@ -73,6 +90,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
   searchLocationSuggestions() {
     this.searchSubject.next(this.searchQuery);
   }
+
 
   selectSuggestion(suggestion: { display_name: string, lat: string, lon: string }) {
     this.searchQuery = suggestion.display_name;
@@ -94,6 +112,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
       localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
     }
   }
+
 
   loadRecentSearches() {
     return JSON.parse(localStorage.getItem('recentSearches') || '[]');
@@ -204,6 +223,8 @@ export class MapPage implements AfterViewInit, OnDestroy {
     if (this.map) {
       this.map.remove();
     }
+    this.locationService.stopTracking();
+    this.locationService.stopTracking();
   }
 
   private initMap(): void {
@@ -263,6 +284,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
     });
   }
 
+
   private clearPreviousRoute(): void {
     if (this.routeLine) {
       this.map.removeLayer(this.routeLine);
@@ -301,16 +323,22 @@ export class MapPage implements AfterViewInit, OnDestroy {
             }
 
             // Check if the route crosses any obstacles
-            this.http.get<any[]>('http://localhost:8081/api/v1/reports/').subscribe(signalements => {
+            this.http.get<any[]>('http://localhost:8081/api/v1/reports/').subscribe(async signalements => {
               if (this.routeIntersectsObstacles(data.features[0].geometry.coordinates, signalements)) {
-                alert("Route blocked by obstacles! Trying alternative route...");
+                const alert = await this.alertController.create({
+                  header: 'Signalements sur route',
+                  message: 'Signalements rencontrés sur cet itinéraire! Recherche itinéraire adapté en cours...',
+                  buttons: ['OK']
+                });
+
+                await alert.present(); // Show the alert
                 this.findAlternativeRoute(startCoords, endCoords, signalements);
               } else {
                 this.drawWalkingRoute(data);
               }
             });
           },
-          error: () => alert('Error fetching route.'),
+          //error: () => alert('Error fetching route.'),
         });
       })
       .catch(() => alert('Error getting coordinates.'));
@@ -499,18 +527,24 @@ export class MapPage implements AfterViewInit, OnDestroy {
 
 
   private trackUserLocation(): void {
-    navigator.geolocation.watchPosition(
-      (position) => {
-        const userLocation = L.latLng(position.coords.latitude, position.coords.longitude);
-        if (!this.userMarker) {
-          this.userMarker = L.marker(userLocation).addTo(this.map);
-        } else {
-          this.userMarker.setLatLng(userLocation);
-        }
-      },
-      () => console.error("Error getting location"),
-      { enableHighAccuracy: true }
-    );
+    const customIcon = L.icon({
+      iconUrl: 'assets/icon/custom-pin.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    this.locationService.location$.subscribe(coords => {
+      if (!coords) return;
+
+      const userLatLng = L.latLng(coords.latitude, coords.longitude);
+
+      if (!this.userMarker) {
+        this.userMarker = L.marker(userLatLng, { icon: customIcon }).addTo(this.map);
+      } else {
+        this.userMarker.setLatLng(userLatLng);
+      }
+    });
   }
 
   private speak(text: string): void {

@@ -14,6 +14,11 @@
       aria-label="Rechercher un lieu"
     />
 
+
+    <div *ngIf="isLoadingSuggestions" class="loading-indicator">
+      <ion-spinner name="dots"></ion-spinner>
+    </div>
+
     <!-- 🔥 Suggestions améliorées -->
     <ul *ngIf="showSuggestions && searchResults.length > 0" class="suggestions">
       <li *ngFor="let result of searchResults; let i = index"
@@ -81,31 +86,6 @@
     <p>Calcul de l'itinéraire...</p>
   </div>
 
-
-
-  <!-- 🔥 Carte -->
-  <div *ngIf="routeDetails" class="route-summary">
-    <h3>Résumé du trajet 🚶</h3>
-
-    <!-- Dynamique de la distance -->
-    <p><strong>Distance :</strong> {{ routeDetails.distance | number:'1.0-2' }} km</p>
-
-    <!-- Dynamique de la durée avec conversion (en minutes ou heures) -->
-    <p><strong>Durée estimée :</strong> {{ convertDuration(routeDetails.duration) }}</p>
-
-    <!-- Étapes du trajet -->
-    <ul>
-      <li *ngFor="let step of routeDetails.steps; let i = index" [ngClass]="{ 'completed-step': step.completed }">
-        <!-- Ajoutez une icône selon l'action -->
-        <ion-icon *ngIf="step.type === 'turn_left'" name="arrow-back-outline"></ion-icon>
-        <ion-icon *ngIf="step.type === 'turn_right'" name="arrow-forward-outline"></ion-icon>
-        <ion-icon *ngIf="step.type === 'straight'" name="arrow-forward-outline"></ion-icon>
-
-        <!-- Détails de l'étape -->
-        {{ step.instruction }}
-      </li>
-    </ul>
-  </div>
 
   <!-- 🔥 Map Container -->
   <div id="map"></div>

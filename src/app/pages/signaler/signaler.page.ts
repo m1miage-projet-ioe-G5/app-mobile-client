@@ -5,6 +5,7 @@ import { IonicModule, ToastController } from '@ionic/angular';
 import { SignalementService } from 'src/app/services/signalement.service'; // Vérifie bien le chemin
 import { FormsModule } from "@angular/forms";
 import {AuthService} from "../../services/auth.service";
+import {LocationService} from "../../services/location.service";
 
 @Component({
   selector: 'app-signaler',
@@ -16,14 +17,15 @@ import {AuthService} from "../../services/auth.service";
 export class SignalerPage implements OnInit {
   signalementForm!: FormGroup;
 
-  // Hardcoded example coordinates for testing
-  exampleLongitude: number = 1.3522;
-  exampleLatitude: number = 43.8566;
+  currentLatitude: number | null = null;
+  currentLongitude: number | null = null;
+
 
   constructor(
     private fb: FormBuilder,
     private signalementService: SignalementService,
     private toastController: ToastController,
+    private locationService: LocationService,
     private authService: AuthService  // Inject AuthService
   ) {}
 
@@ -31,6 +33,14 @@ export class SignalerPage implements OnInit {
     this.signalementForm = this.fb.group({
       typeProbleme: ['', Validators.required],
       description: ['', Validators.required],
+    });
+    this.locationService.location$.subscribe((coords) => {
+      if (coords) {
+        this.currentLatitude = coords.latitude;
+        this.currentLongitude = coords.longitude;
+        //console vérif
+        console.log(' Coordonnées actuelles :', coords.latitude, coords.longitude);
+      }
     });
   }
 
@@ -41,14 +51,19 @@ export class SignalerPage implements OnInit {
       return;
     }
 
+    if (!this.currentLatitude || !this.currentLongitude) {
+      this.afficherToast('Localisation non disponible.');
+      return;
+    }
+
     // Get the logged-in user's email from AuthService
     const currentUser = this.authService.getCurrentUser();
-    const userEmail = currentUser ? currentUser.email : 'user@example.com';  // Fallback if no user is logged in
+    const userEmail = currentUser ? currentUser.email : 'erreuruser@example.com';  // Fallback if no user is logged in
 
     const data = {
-      id: 123,
-      longitude: this.exampleLongitude,  // Hardcoded example longitude
-      latitude: this.exampleLatitude,    // Hardcoded example latitude
+      id: 123, // à automatiser !!!!!!!!!!!!!!!!!
+      longitude: this.currentLongitude,
+      latitude: this.currentLatitude,
       typeProbleme: this.signalementForm.value.typeProbleme,
       description: this.signalementForm.value.description,
       photoUrl: "",  // Empty, can be added for future implementation (e.g., file upload)
