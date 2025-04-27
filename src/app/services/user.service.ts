@@ -9,6 +9,7 @@ import {environment} from "../../environments/environment";
 })
 export class UserService {
   private apiUrl = environment.apiUrl;
+  private mobilityProfile: MobilityProfile = 'foot';
 
   constructor(private http: HttpClient) { }
 

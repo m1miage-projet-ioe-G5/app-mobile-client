@@ -7,7 +7,7 @@ import { environment } from 'src/environments/environment';
 import { CommonModule } from '@angular/common';
 import { getMarker } from 'src/app/pages/map/utils/marker';
 import { recenter } from 'src/app/pages/map/utils/leaflet.utils';
-import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, tap} from "rxjs";
+import {debounceTime, distinctUntilChanged, finalize, of, Subject, switchMap, tap} from "rxjs";
 import { AlertController } from '@ionic/angular';
 import {LocationService} from "../../services/location.service";
 
@@ -71,11 +71,13 @@ export class MapPage implements AfterViewInit, OnDestroy {
     this.loadRecentSearches();
 
     this.searchSubject.pipe(
-      debounceTime(300), // 300 ms d'attente avant de lancer la requête
-      distinctUntilChanged(), // Ne pas relancer si la valeur n'a pas changé
-      tap(() => this.isLoadingSuggestions = true), // Afficher un spinner pendant la recherche
-      switchMap(query => this.getLocationSuggestions(query)), // Appel à l'API
-      finalize(() => this.isLoadingSuggestions = false) // Masquer le spinner après la requête
+      debounceTime(700), // attends 500 ms d'inactivité
+      distinctUntilChanged(),
+      tap(() => this.isLoadingSuggestions = true),
+      switchMap(query => {
+        return this.getLocationSuggestions(query);
+      }),
+      finalize(() => this.isLoadingSuggestions = false)
     ).subscribe(results => {
       this.searchResults = results;
     });
@@ -88,6 +90,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
     return this.http.get<any[]>(url);
   }
   searchLocationSuggestions() {
+    if (this.searchQuery.length < 5) return;
     this.searchSubject.next(this.searchQuery);
   }
 
@@ -120,7 +123,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
 
 
   searchStartSuggestions() {
-    if (!this.startLocation) {
+    if (!this.startLocation || this.endLocation.length < 5) {
       this.startSuggestions = [];
       return;
     }
@@ -139,7 +142,7 @@ export class MapPage implements AfterViewInit, OnDestroy {
   }
 
   searchEndSuggestions() {
-    if (!this.endLocation) {
+    if (!this.endLocation || this.endLocation.length < 5) {
       this.endSuggestions = [];
       return;
     }
