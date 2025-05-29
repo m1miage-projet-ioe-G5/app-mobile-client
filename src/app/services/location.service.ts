@@ -33,11 +33,16 @@ export class LocationService {
       },
       (error) => {
         console.error('Erreur localisation :', error);
+        if (error.code === error.TIMEOUT) {
+          // Recommencer ou informer l’utilisateur
+          alert("La localisation a échoué. Veuillez activer votre GPS ou réessayer.");
+        }
+
         this.locationSubject.next(null);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 60000,
         maximumAge: 0,
       }
     );

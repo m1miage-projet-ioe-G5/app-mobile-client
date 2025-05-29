@@ -6,8 +6,12 @@
         <ion-label>
           <h2>{{ item.typeProbleme }}</h2>
           <p>{{ item.description }}</p>
-          <small>{{ item.dateCreation | date: 'short' }}</small>
+          <small>
+            {{ item.dateCreation | date: 'short' }}
+            &bull; {{ item.distance | number: '1.0-0' }} m
+          </small>
         </ion-label>
+
       </ion-item>
     </ion-list>
     <ng-template #loadingTemplate>

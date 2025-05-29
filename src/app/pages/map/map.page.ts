@@ -10,6 +10,7 @@ import { recenter } from 'src/app/pages/map/utils/leaflet.utils';
 import {debounceTime, distinctUntilChanged, finalize, of, Subject, switchMap, tap} from "rxjs";
 import { AlertController } from '@ionic/angular';
 import {LocationService} from "../../services/location.service";
+import {ProximityDetectionService} from "../../services/proximity-detection.service";
 
 
 @Component({
@@ -37,6 +38,8 @@ export class MapPage implements AfterViewInit, OnDestroy {
   public showStartSuggestions: boolean = false;
   public showEndSuggestions: boolean = false;
   public isLoadingSuggestions: boolean = false;
+  private proximityMonitoringStarted = false;
+
 
   public routeSummary: { distance: string; duration: string; steps: string[] } | null = null;
   panelOpen = false;
@@ -53,12 +56,19 @@ export class MapPage implements AfterViewInit, OnDestroy {
     private http: HttpClient,
     private loadingCtrl: LoadingController,
     private locationService: LocationService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private proximityService: ProximityDetectionService
   ) {}
 
   ngAfterViewInit(): void {
     this.platform.ready().then(() => {
       this.locationService.startTracking();
+      // évite les multiples appels au startMonitoring
+      if (!this.proximityMonitoringStarted) {
+        this.proximityService.startMonitoring();
+        this.proximityMonitoringStarted = true;
+      }
+
       setTimeout(() => {
         this.initMap();
 
